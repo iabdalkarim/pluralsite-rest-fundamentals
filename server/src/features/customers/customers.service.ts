@@ -9,6 +9,7 @@ export function getCustomers(): Promise<Customer[]> {
 }
 
 export function searchCustomers(query: string): Promise<Customer[]> {
+  console.log("Searching customers with query:", query);
   return prisma.customer.findMany({
     where: {
       OR: [
