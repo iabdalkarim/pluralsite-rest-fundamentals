@@ -1,5 +1,7 @@
 import express from "express";
 import { getItems, getItemDetail } from "./items.service";
+import { validate } from "../../middleware/validation.middleware";
+import { idUUIDRequestSchema } from "../types";
 
 export const itemsRouter = express.Router();
 
@@ -11,7 +13,7 @@ itemsRouter.get("/", async (req, res) => {
   res.json(items);
 });
 
-itemsRouter.get("/:id", async(req, res) => {
+itemsRouter.get("/:id", validate(idUUIDRequestSchema), async (req, res) => {
   const itemId = parseInt(req.params.id, 10);
   const item = await getItemDetail(itemId);
   if (item) {
@@ -20,7 +22,7 @@ itemsRouter.get("/:id", async(req, res) => {
   } else {
     res.status(404).send({ message: "Item not found" });
   }
-})
+});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 function buildImageUrl(req: any, id: number): string {
