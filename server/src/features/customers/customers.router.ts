@@ -4,9 +4,10 @@ import {
   getCustomerDetail,
   searchCustomers,
   upsertCustomer,
+  deleteCustomer,
 } from "./customers.service";
 import { getOrdersForCustomer } from "../orders/orders.service";
-import { customerPOSTRequestSchema, idNumberRequestSchema } from "../types";
+import { customerPOSTRequestSchema, idUUIDRequestSchema } from "../types";
 import { validate } from "../../middleware/validation.middleware";
 
 export const customersRouter = express.Router();
@@ -18,9 +19,9 @@ customersRouter.get("/", async (req, res) => {
 
 customersRouter.get(
   "/:id",
-  validate(idNumberRequestSchema),
+  validate(idUUIDRequestSchema),
   async (req, res) => {
-    const customerId = req.params.id;
+    const customerId = idUUIDRequestSchema.parse(req).params.id;
     const customer = await getCustomerDetail(customerId);
     if (customer) {
       res.json(customer);
@@ -32,7 +33,7 @@ customersRouter.get(
 
 customersRouter.get(
   "/:id/orders",
-  validate(idNumberRequestSchema),
+  validate(idUUIDRequestSchema),
   async (req, res) => {
     const customerId = req.params.id;
     const orders = await getOrdersForCustomer(customerId);
@@ -53,5 +54,16 @@ customersRouter.post("/", validate(customerPOSTRequestSchema), async (req, res) 
     res.status(201).json(customer); 
   } else {
     res.status(400).send({ message: "Failed to create customer" });
+  }
+});
+
+customersRouter.delete("/:id", validate(idUUIDRequestSchema), async (req, res) => { 
+  const customerId = idUUIDRequestSchema.parse(req).params.id;
+  const customer = await deleteCustomer(customerId);
+  if (customer){
+    res.status(204).send(customer);
+  }
+  else {
+    res.status(404).send({ message: "Customer not found" });
   }
 });

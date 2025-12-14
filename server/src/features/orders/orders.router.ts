@@ -1,12 +1,15 @@
 import express from "express";
 import {
   addOrderItems,
+  deleteOrder,
+  deleteOrderItem,
   getOrderDetail,
   getOrders,
   upsertOrder,
 } from "./orders.service";
 import { validate } from "../../middleware/validation.middleware";
 import {
+  idItemIdUUIDRequestSchema,
   idUUIDRequestSchema,
   orderItemsDTORequestSchema,
   orderPOSTRequestSchema,
@@ -58,3 +61,25 @@ ordersRouter.post(
     }
   }
 );
+
+ordersRouter.delete("/:id", validate(idUUIDRequestSchema), async (req, res) => {
+  const orderId = idUUIDRequestSchema.parse(req).params.id;
+  const order = await deleteOrder(orderId);
+  if (order) {
+    res.status(204).json(order);
+  } else {
+    res.status(404).send({ message: "Order not found" });
+  }   
+});
+
+ordersRouter.delete("/:id/items/:itemId", validate(idItemIdUUIDRequestSchema), async (req, res) => {
+  const parsedRequest = idItemIdUUIDRequestSchema.parse(req);
+  const orderId = parsedRequest.params.id;
+  const itemId = parsedRequest.params.itemId;
+  const order = await deleteOrderItem(orderId, itemId);
+  if (order) {
+    res.status(204).json(order);
+  } else {
+    res.status(404).send({ message: "Order or Item not found" });
+  } 
+});
