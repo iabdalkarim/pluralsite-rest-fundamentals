@@ -1,7 +1,16 @@
 import express from "express";
-import { getItems, getItemDetail, upsertItem, deleteItem } from "./items.service";
+import {
+  getItems,
+  getItemDetail,
+  upsertItem,
+  deleteItem,
+} from "./items.service";
 import { validate } from "../../middleware/validation.middleware";
-import { idNumberRequestSchema, itemPOSTRequestSchema } from "../types";
+import {
+  idNumberRequestSchema,
+  itemPOSTRequestSchema,
+  itemPUTRequestSchema,
+} from "../types";
 
 export const itemsRouter = express.Router();
 
@@ -32,15 +41,31 @@ itemsRouter.post("/", validate(itemPOSTRequestSchema), async (req, res) => {
   } else {
     res.status(400).send({ message: "Failed to create item" });
   }
-})
+});
 
-itemsRouter.delete("/:id", validate(idNumberRequestSchema), async (req, res) => { 
-  const itemId = idNumberRequestSchema.parse(req).params.id;
-  const item = await deleteItem(itemId);
+itemsRouter.delete(
+  "/:id",
+  validate(idNumberRequestSchema),
+  async (req, res) => {
+    const itemId = idNumberRequestSchema.parse(req).params.id;
+    const item = await deleteItem(itemId);
+    if (item) {
+      res.status(204).json(item);
+    } else {
+      res.status(404).send({ message: "Item not found" });
+    }
+  }
+);
+
+itemsRouter.put("/:id", validate(itemPUTRequestSchema), async (req, res) => {
+  const parsed = itemPUTRequestSchema.parse(req);
+  const itemId = parsed.params.id;
+  const itemDto = parsed.body;
+  const item = await upsertItem(itemDto, itemId);
   if (item) {
-    res.status(204).json(item);
+    res.json(item);
   } else {
-    res.status(404).send({ message: "Item not found" });
+    res.status(400).send({ message: "Failed to update item" });
   }
 });
 

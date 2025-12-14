@@ -13,6 +13,7 @@ import {
   idUUIDRequestSchema,
   orderItemsDTORequestSchema,
   orderPOSTRequestSchema,
+  orderPUTRequestSchema,
   pagingRequestSchema,
 } from "../types";
 
@@ -69,17 +70,33 @@ ordersRouter.delete("/:id", validate(idUUIDRequestSchema), async (req, res) => {
     res.status(204).json(order);
   } else {
     res.status(404).send({ message: "Order not found" });
-  }   
+  }
 });
 
-ordersRouter.delete("/:id/items/:itemId", validate(idItemIdUUIDRequestSchema), async (req, res) => {
-  const parsedRequest = idItemIdUUIDRequestSchema.parse(req);
-  const orderId = parsedRequest.params.id;
-  const itemId = parsedRequest.params.itemId;
-  const order = await deleteOrderItem(orderId, itemId);
+ordersRouter.delete(
+  "/:id/items/:itemId",
+  validate(idItemIdUUIDRequestSchema),
+  async (req, res) => {
+    const parsedRequest = idItemIdUUIDRequestSchema.parse(req);
+    const orderId = parsedRequest.params.id;
+    const itemId = parsedRequest.params.itemId;
+    const order = await deleteOrderItem(orderId, itemId);
+    if (order) {
+      res.status(204).json(order);
+    } else {
+      res.status(404).send({ message: "Order or Item not found" });
+    }
+  }
+);
+
+ordersRouter.put("/:id", validate(orderPUTRequestSchema), async (req, res) => {
+  const parsed = orderPUTRequestSchema.parse(req);
+  const orderId = parsed.params.id;
+  const orderDto = { customerId: "", ...parsed.body };
+  const order = await upsertOrder(orderDto, orderId);
   if (order) {
-    res.status(204).json(order);
+    res.json(order);
   } else {
-    res.status(404).send({ message: "Order or Item not found" });
-  } 
+    res.status(400).send({ message: "Failed to update order" });
+  }
 });

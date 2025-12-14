@@ -7,7 +7,11 @@ import {
   deleteCustomer,
 } from "./customers.service";
 import { getOrdersForCustomer } from "../orders/orders.service";
-import { customerPOSTRequestSchema, idUUIDRequestSchema } from "../types";
+import {
+  customerPOSTRequestSchema,
+  customerPUTRequestSchema,
+  idUUIDRequestSchema,
+} from "../types";
 import { validate } from "../../middleware/validation.middleware";
 
 export const customersRouter = express.Router();
@@ -17,19 +21,15 @@ customersRouter.get("/", async (req, res) => {
   res.json(customers);
 });
 
-customersRouter.get(
-  "/:id",
-  validate(idUUIDRequestSchema),
-  async (req, res) => {
-    const customerId = idUUIDRequestSchema.parse(req).params.id;
-    const customer = await getCustomerDetail(customerId);
-    if (customer) {
-      res.json(customer);
-    } else {
-      res.status(404).send({ message: "Customer not found" });
-    }
+customersRouter.get("/:id", validate(idUUIDRequestSchema), async (req, res) => {
+  const customerId = idUUIDRequestSchema.parse(req).params.id;
+  const customer = await getCustomerDetail(customerId);
+  if (customer) {
+    res.json(customer);
+  } else {
+    res.status(404).send({ message: "Customer not found" });
   }
-);
+});
 
 customersRouter.get(
   "/:id/orders",
@@ -47,23 +47,46 @@ customersRouter.get("/search/:query", async (req, res) => {
   res.json(customers);
 });
 
-customersRouter.post("/", validate(customerPOSTRequestSchema), async (req, res) => {
-  const customerDto = customerPOSTRequestSchema.parse(req).body;
-  const customer = await upsertCustomer(customerDto, null);
-  if (customer) {
-    res.status(201).json(customer); 
-  } else {
-    res.status(400).send({ message: "Failed to create customer" });
+customersRouter.post(
+  "/",
+  validate(customerPOSTRequestSchema),
+  async (req, res) => {
+    const customerDto = customerPOSTRequestSchema.parse(req).body;
+    const customer = await upsertCustomer(customerDto, null);
+    if (customer) {
+      res.status(201).json(customer);
+    } else {
+      res.status(400).send({ message: "Failed to create customer" });
+    }
   }
-});
+);
 
-customersRouter.delete("/:id", validate(idUUIDRequestSchema), async (req, res) => { 
-  const customerId = idUUIDRequestSchema.parse(req).params.id;
-  const customer = await deleteCustomer(customerId);
-  if (customer){
-    res.status(204).send(customer);
+customersRouter.delete(
+  "/:id",
+  validate(idUUIDRequestSchema),
+  async (req, res) => {
+    const customerId = idUUIDRequestSchema.parse(req).params.id;
+    const customer = await deleteCustomer(customerId);
+    if (customer) {
+      res.status(204).send(customer);
+    } else {
+      res.status(404).send({ message: "Customer not found" });
+    }
   }
-  else {
-    res.status(404).send({ message: "Customer not found" });
+);
+
+customersRouter.put(
+  "/:id",
+  validate(customerPUTRequestSchema),
+  async (req, res) => {
+    const parsed = customerPUTRequestSchema.parse(req);
+    const customerId = parsed.params.id;
+    const customerDto = parsed.body;
+    const customer = await upsertCustomer(customerDto, customerId);
+    if (customer) {
+      res.json(customer);
+    } else {
+      res.status(400).send({ message: "Failed to update customer" });
+    }
   }
-});
+);
