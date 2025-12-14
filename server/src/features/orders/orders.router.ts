@@ -1,7 +1,17 @@
 import express from "express";
-import { getOrderDetail, getOrders } from "./orders.service";
+import {
+  addOrderItems,
+  getOrderDetail,
+  getOrders,
+  upsertOrder,
+} from "./orders.service";
 import { validate } from "../../middleware/validation.middleware";
-import { idUUIDRequestSchema, pagingRequestSchema } from "../types";
+import {
+  idUUIDRequestSchema,
+  orderItemsDTORequestSchema,
+  orderPOSTRequestSchema,
+  pagingRequestSchema,
+} from "../types";
 
 export const ordersRouter = express.Router();
 
@@ -22,3 +32,29 @@ ordersRouter.get("/:id", validate(idUUIDRequestSchema), async (req, res) => {
     res.status(404).send({ message: "Order not found" });
   }
 });
+
+ordersRouter.post("/", validate(orderPOSTRequestSchema), async (req, res) => {
+  const orderDto = orderPOSTRequestSchema.parse(req).body;
+  const order = await upsertOrder(orderDto, null);
+  if (order) {
+    res.status(201).json(order);
+  } else {
+    res.status(400).send({ message: "Failed to create order" });
+  }
+});
+
+ordersRouter.post(
+  "/:id/items",
+  validate(orderItemsDTORequestSchema),
+  async (req, res) => {
+    const parsedRequest = orderItemsDTORequestSchema.parse(req);
+    const orderId = parsedRequest.params.id;
+    const itemsDto = parsedRequest.body;
+    const orderDetails = await addOrderItems(orderId, itemsDto);
+    if (orderDetails) {
+      res.status(200).json(orderDetails);
+    } else {
+      res.status(400).send({ message: "Failed to add items to order" });
+    }
+  }
+);

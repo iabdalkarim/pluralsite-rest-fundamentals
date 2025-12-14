@@ -1,7 +1,7 @@
 import express from "express";
-import { getItems, getItemDetail } from "./items.service";
+import { getItems, getItemDetail, upsertItem } from "./items.service";
 import { validate } from "../../middleware/validation.middleware";
-import { idUUIDRequestSchema } from "../types";
+import { idUUIDRequestSchema, itemPOSTRequestSchema } from "../types";
 
 export const itemsRouter = express.Router();
 
@@ -23,6 +23,16 @@ itemsRouter.get("/:id", validate(idUUIDRequestSchema), async (req, res) => {
     res.status(404).send({ message: "Item not found" });
   }
 });
+
+itemsRouter.post("/", validate(itemPOSTRequestSchema), async (req, res) => {
+  const itemDto = itemPOSTRequestSchema.parse(req).body;
+  const item = await upsertItem(itemDto, null);
+  if (item) {
+    res.status(201).json(item);
+  } else {
+    res.status(400).send({ message: "Failed to create item" });
+  }
+})
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
 function buildImageUrl(req: any, id: number): string {

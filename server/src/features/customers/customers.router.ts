@@ -3,9 +3,10 @@ import {
   getCustomers,
   getCustomerDetail,
   searchCustomers,
+  upsertCustomer,
 } from "./customers.service";
 import { getOrdersForCustomer } from "../orders/orders.service";
-import { idNumberRequestSchema } from "../types";
+import { customerPOSTRequestSchema, idNumberRequestSchema } from "../types";
 import { validate } from "../../middleware/validation.middleware";
 
 export const customersRouter = express.Router();
@@ -43,4 +44,14 @@ customersRouter.get("/search/:query", async (req, res) => {
   const query = req.params.query;
   const customers = await searchCustomers(query);
   res.json(customers);
+});
+
+customersRouter.post("/", validate(customerPOSTRequestSchema), async (req, res) => {
+  const customerDto = customerPOSTRequestSchema.parse(req).body;
+  const customer = await upsertCustomer(customerDto, null);
+  if (customer) {
+    res.status(201).json(customer); 
+  } else {
+    res.status(400).send({ message: "Failed to create customer" });
+  }
 });
