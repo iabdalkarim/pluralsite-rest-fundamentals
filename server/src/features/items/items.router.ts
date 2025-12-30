@@ -11,27 +11,49 @@ import {
   itemPOSTRequestSchema,
   itemPUTRequestSchema,
 } from "../types";
+import { xmlTransformer,  xmlTransformerWithoutMung as xmlTransformerForSend} from "../../middleware/xml-resoponse.middleware";
 
 export const itemsRouter = express.Router();
 
-itemsRouter.get("/", async (req, res) => {
-  const items = await getItems();
-  items.forEach((item) => {
-    item.imageUrl = buildImageUrl(req, item.id);
-  });
-  res.json(items);
-});
-
-itemsRouter.get("/:id", validate(idNumberRequestSchema), async (req, res) => {
-  const itemId = idNumberRequestSchema.parse(req).params.id;
-  const item = await getItemDetail(itemId);
-  if (item) {
-    item.imageUrl = buildImageUrl(req, itemId);
-    res.json(item);
-  } else {
-    res.status(404).send({ message: "Item not found" });
+itemsRouter.get(
+  "/",
+  xmlTransformer("items", (body, root) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    body.forEach((item: any) => {
+      root.ele("item", item);
+    });
+    return root.end({ prettyPrint: true });
+  }),
+  async (req, res) => {
+    const items = await getItems();
+    items.forEach((item) => {
+      item.imageUrl = buildImageUrl(req, item.id);
+    });
+    res.json(items);
   }
-});
+);
+
+itemsRouter.get(
+  "/:id",
+  xmlTransformer("items", (body, root) => {
+    root.ele("item", body);
+    return root.end({ prettyPrint: true });
+  }),
+  xmlTransformerForSend("item", (body, root) => {
+      root.ele("message").txt("Item not found");
+  }),
+  validate(idNumberRequestSchema),
+  async (req, res) => {
+    const itemId = idNumberRequestSchema.parse(req).params.id;
+    const item = await getItemDetail(itemId);
+    if (item) {
+      item.imageUrl = buildImageUrl(req, itemId);
+      res.json(item);
+    } else {
+      res.status(404).send({ message: "Item not found" });
+    }
+  }
+);
 
 itemsRouter.post("/", validate(itemPOSTRequestSchema), async (req, res) => {
   const itemDto = itemPOSTRequestSchema.parse(req).body;
