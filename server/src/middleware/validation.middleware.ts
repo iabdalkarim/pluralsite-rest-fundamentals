@@ -9,9 +9,10 @@ export const validate = (schema: AnyZodObject) => {
       params: req.params,
     });
     if (!result.success) {
-      return res.status(400).json({
+      return res.status(400).send({
         message: "Validation failed",
-        errors: result.error.issues.map((issue) => {  return { path: issue.path.join(": "), message: issue.message };
+        errors: result.error.issues.map((issue) => {
+          return { path: issue.path.join(": "), message: issue.message };
         }),
       });
     }

@@ -12,9 +12,6 @@ export const xmlTransformer = (
     if (req.headers["accept"] === "application/xml") {
       const root = create().ele(rootElementName);
       const xml = handler(body, root);
-
-      // Set the header, but DO NOT call res.send() here.
-      // Simply return the string; mung sends it for you.
       res.setHeader("Content-Type", "application/xml");
       return xml;
     }
@@ -23,7 +20,7 @@ export const xmlTransformer = (
 };
 
 
-export const xmlTransformerWithoutMung = (
+export const xmlTransformerForError = (
   rootElementName: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: (body: any, rootElement: XMLBuilder) => void
@@ -32,7 +29,7 @@ export const xmlTransformerWithoutMung = (
     const originalJson = res.send;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     res.send = function (body: any): Response {
-        if (req.headers["accept"] === "application/xml") {
+        if (res.statusCode !== 200 && req.headers["accept"] === "application/xml") {
             const root = create().ele(rootElementName);
             handler(body, root);
             res.setHeader("Content-Type", "application/xml");

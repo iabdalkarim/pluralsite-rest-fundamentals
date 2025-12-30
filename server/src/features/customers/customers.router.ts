@@ -13,26 +13,61 @@ import {
   idUUIDRequestSchema,
 } from "../types";
 import { validate } from "../../middleware/validation.middleware";
+import {
+  xmlTransformer,
+  xmlTransformerForError,
+} from "../../middleware/xml-resoponse.middleware";
 
 export const customersRouter = express.Router();
 
-customersRouter.get("/", async (req, res) => {
-  const customers = await getCustomers();
-  res.json(customers);
-});
-
-customersRouter.get("/:id", validate(idUUIDRequestSchema), async (req, res) => {
-  const customerId = idUUIDRequestSchema.parse(req).params.id;
-  const customer = await getCustomerDetail(customerId);
-  if (customer) {
-    res.json(customer);
-  } else {
-    res.status(404).send({ message: "Customer not found" });
+customersRouter.get(
+  "/",
+  xmlTransformer("customers", (customers, root) => {
+    customers.forEach((customer: any) => {
+      root.ele("customer", customer);
+    });
+    return root.end({ prettyPrint: true });
+  }),
+  async (req, res) => {
+    const customers = await getCustomers();
+    res.json(customers);
   }
-});
+);
+
+customersRouter.get(
+  "/:id",
+  xmlTransformer("customer", (customer, root) => {
+    root.ele(customer);
+    return root.end({ prettyPrint: true });
+  }),
+  xmlTransformerForError("error", (body, root) => {
+    root.ele("message").txt(body.message);
+    return root.end({ prettyPrint: true });
+  }),
+  validate(idUUIDRequestSchema),
+  async (req, res) => {
+    const customerId = idUUIDRequestSchema.parse(req).params.id;
+    const customer = await getCustomerDetail(customerId);
+    if (customer) {
+      res.json(customer);
+    } else {
+      res.status(404).send({ message: "Customer not found" });
+    }
+  }
+);
 
 customersRouter.get(
   "/:id/orders",
+  xmlTransformer("orders", (orders, root) => {
+    orders.forEach((order: any) => {
+      root.ele("order", order);
+    });
+    return root.end({ prettyPrint: true });
+  }),
+  xmlTransformerForError("error", (body, root) => {
+    root.ele("message").txt(body.message);
+    return root.end({ prettyPrint: true });
+  }),
   validate(idUUIDRequestSchema),
   async (req, res) => {
     const customerId = req.params.id;

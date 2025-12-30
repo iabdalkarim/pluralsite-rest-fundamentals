@@ -11,7 +11,7 @@ import {
   itemPOSTRequestSchema,
   itemPUTRequestSchema,
 } from "../types";
-import { xmlTransformer,  xmlTransformerWithoutMung as xmlTransformerForSend} from "../../middleware/xml-resoponse.middleware";
+import { xmlTransformer, xmlTransformerForError} from "../../middleware/xml-resoponse.middleware";
 
 export const itemsRouter = express.Router();
 
@@ -35,12 +35,13 @@ itemsRouter.get(
 
 itemsRouter.get(
   "/:id",
-  xmlTransformer("items", (body, root) => {
-    root.ele("item", body);
+  xmlTransformer("item", (body, root) => {
+    root.ele(body);
     return root.end({ prettyPrint: true });
   }),
-  xmlTransformerForSend("item", (body, root) => {
-      root.ele("message").txt("Item not found");
+  xmlTransformerForError("error", (body, root) => {
+      root.ele("message").txt(body.message);
+      return root.end({ prettyPrint: true });
   }),
   validate(idNumberRequestSchema),
   async (req, res) => {
