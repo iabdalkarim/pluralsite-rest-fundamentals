@@ -15,6 +15,7 @@ export enum CustomersPermissions {
   Read_Single = "read:customers-single",
   Write = "write:customers",
   Create = "create:customers",
+  Read_Orders = "read:customers-orders",
 }
 
 export enum SecurityPermissions {
